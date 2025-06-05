@@ -254,6 +254,104 @@ class CardEffects {
     }
 }
 
+// Simple Pong Game
+class PongGame {
+    constructor() {
+        this.canvas = document.getElementById('pongCanvas');
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.w = this.canvas.width;
+        this.h = this.canvas.height;
+        this.paddleW = 60;
+        this.paddleH = 10;
+        this.reset();
+        this.bindEvents();
+        this.loop();
+    }
+
+    reset() {
+        this.playerX = (this.w - this.paddleW) / 2;
+        this.cpuX = (this.w - this.paddleW) / 2;
+        this.ball = { x: this.w / 2, y: this.h / 2, dx: 2, dy: 2, r: 5 };
+        this.playerDir = 0;
+    }
+
+    bindEvents() {
+        document.addEventListener('keydown', e => {
+            if (['ArrowLeft', 'a', 'A'].includes(e.key)) this.playerDir = -1;
+            if (['ArrowRight', 'd', 'D'].includes(e.key)) this.playerDir = 1;
+        });
+        document.addEventListener('keyup', e => {
+            if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'A', 'D'].includes(e.key)) this.playerDir = 0;
+        });
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            const dir = btn.dataset.dir === 'left' ? -1 : 1;
+            btn.addEventListener('touchstart', () => { this.playerDir = dir; });
+            btn.addEventListener('touchend', () => { this.playerDir = 0; });
+            btn.addEventListener('mousedown', () => { this.playerDir = dir; });
+            btn.addEventListener('mouseup', () => { this.playerDir = 0; });
+        });
+    }
+
+    loop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+
+    update() {
+        this.playerX += this.playerDir * 4;
+        if (this.playerX < 0) this.playerX = 0;
+        if (this.playerX + this.paddleW > this.w) this.playerX = this.w - this.paddleW;
+
+        const target = this.ball.x - this.paddleW / 2;
+        if (this.cpuX < target) this.cpuX += 2;
+        else if (this.cpuX > target) this.cpuX -= 2;
+        this.cpuX = Math.max(0, Math.min(this.w - this.paddleW, this.cpuX));
+
+        this.ball.x += this.ball.dx;
+        this.ball.y += this.ball.dy;
+
+        if (this.ball.x < this.ball.r || this.ball.x > this.w - this.ball.r) {
+            this.ball.dx *= -1;
+        }
+
+        if (this.ball.y < this.ball.r + this.paddleH) {
+            if (this.ball.x > this.cpuX && this.ball.x < this.cpuX + this.paddleW) {
+                this.ball.dy *= -1;
+                this.ball.y = this.ball.r + this.paddleH;
+            } else {
+                this.reset();
+            }
+        }
+
+        if (this.ball.y > this.h - this.ball.r - this.paddleH) {
+            if (this.ball.x > this.playerX && this.ball.x < this.playerX + this.paddleW) {
+                this.ball.dy *= -1;
+                this.ball.y = this.h - this.ball.r - this.paddleH;
+            } else {
+                this.reset();
+            }
+        }
+    }
+
+    draw() {
+        this.ctx.fillStyle = '#0a0a0a';
+        this.ctx.fillRect(0, 0, this.w, this.h);
+
+        this.ctx.fillStyle = '#00ffff';
+        this.ctx.fillRect(this.playerX, this.h - this.paddleH, this.paddleW, this.paddleH);
+
+        this.ctx.fillStyle = '#ff0080';
+        this.ctx.fillRect(this.cpuX, 0, this.paddleW, this.paddleH);
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+}
+
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
     // 少し遅延させてから初期化（パフォーマンス向上）
@@ -263,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new FormAnimation();
         new GlitchEffect();
         new CardEffects();
+        new PongGame();
     }, 500);
 });
 

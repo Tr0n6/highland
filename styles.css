@@ -588,6 +588,47 @@ body {
     color: var(--text-secondary);
 }
 
+/* Mini Game Section */
+.mini-game {
+    text-align: center;
+}
+
+#pongCanvas {
+    background: rgba(10, 10, 10, 0.9);
+    border: 2px solid var(--primary-cyan);
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.game-instructions {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.game-controls {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    margin: 2px;
+    background: var(--darker-bg);
+    border: 1px solid var(--primary-cyan);
+    color: var(--primary-cyan);
+    font-size: 1.1rem;
+    border-radius: 5px;
+}
+
+.control-btn:active {
+    background: var(--primary-cyan);
+    color: var(--dark-bg);
+}
+
 /* Footer */
 .footer {
     background: var(--darker-bg);

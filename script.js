@@ -254,6 +254,62 @@ class CardEffects {
     }
 }
 
+// Tron-style grid animation at the bottom
+class TronGrid {
+    constructor() {
+        this.canvas = document.getElementById('tronCanvas');
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.offset = 0;
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.animate();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = this.canvas.offsetHeight;
+    }
+
+    animate() {
+        this.draw();
+        requestAnimationFrame(() => this.animate());
+    }
+
+    draw() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 1;
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 6;
+
+        const spacing = 20;
+        this.offset = (this.offset + 1) % spacing;
+
+        for (let y = h; y > 0; y -= spacing) {
+            const pos = y + this.offset;
+            const perspective = pos / h;
+            const xOffset = (w / 2) * (1 - perspective);
+            ctx.beginPath();
+            ctx.moveTo(xOffset, pos);
+            ctx.lineTo(w - xOffset, pos);
+            ctx.stroke();
+        }
+
+        const cols = 20;
+        for (let i = 0; i <= cols; i++) {
+            const x = (i / cols) * w;
+            ctx.beginPath();
+            ctx.moveTo(x, h);
+            ctx.lineTo(w / 2, 0);
+            ctx.stroke();
+        }
+    }
+}
+
 // Simple Pong Game
 class PongGame {
     constructor() {
@@ -361,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new FormAnimation();
         new GlitchEffect();
         new CardEffects();
+        new TronGrid();
         new PongGame();
     }, 500);
 });

@@ -118,26 +118,35 @@ class MatrixEffect {
 class CubeAnimation {
     constructor() {
         this.cubes = document.querySelectorAll('.cube');
-        this.animateCubes();
-    }
-    
-    animateCubes() {
-        this.cubes.forEach((cube, index) => {
-            // マウス追従効果
-            document.addEventListener('mousemove', (e) => {
-                const rect = cube.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                const deltaX = (e.clientX - centerX) * 0.02;
-                const deltaY = (e.clientY - centerY) * 0.02;
-                
-                cube.style.transform = `translateY(${Math.sin(Date.now() * 0.001 + index * 2) * 20}px) 
-                                      rotateX(${deltaY}deg) 
-                                      rotateY(${deltaX}deg) 
-                                      rotateZ(${Math.cos(Date.now() * 0.001 + index * 1.5) * 10}deg)`;
-            });
+        this.mouseX = 0;
+        this.mouseY = 0;
+
+        // マウス座標を追跡
+        document.addEventListener('mousemove', (e) => {
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
         });
+
+        this.animate();
+    }
+
+    // マウス位置をもとにすべてのキューブを更新
+    animate() {
+        this.cubes.forEach((cube, index) => {
+            const rect = cube.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const deltaX = (this.mouseX - centerX) * 0.02;
+            const deltaY = (this.mouseY - centerY) * 0.02;
+
+            cube.style.transform = `translateY(${Math.sin(Date.now() * 0.001 + index * 2) * 20}px)
+                                  rotateX(${deltaY}deg)
+                                  rotateY(${deltaX}deg)
+                                  rotateZ(${Math.cos(Date.now() * 0.001 + index * 1.5) * 10}deg)`;
+        });
+
+        requestAnimationFrame(() => this.animate());
     }
 }
 

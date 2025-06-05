@@ -114,6 +114,47 @@ class MatrixEffect {
     }
 }
 
+// フッター専用マトリックスエフェクト
+class FooterMatrix {
+    constructor(id) {
+        this.canvas = document.getElementById(id);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.fontSize = 14;
+        this.chars = 'HIGHLAND01010101アイウエオカキクケコサシスセソタチツテトナニヌネノ';
+        this.resize();
+        this.matrix = Array(this.columns).fill(1);
+        window.addEventListener('resize', () => this.resize());
+        this.draw();
+    }
+
+    resize() {
+        this.canvas.width = this.canvas.offsetWidth;
+        this.canvas.height = this.canvas.offsetHeight;
+        this.columns = Math.floor(this.canvas.width / this.fontSize);
+        this.matrix = Array(this.columns).fill(1);
+    }
+
+    draw() {
+        this.ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#00ffff';
+        this.ctx.font = this.fontSize + 'px monospace';
+
+        for (let i = 0; i < this.matrix.length; i++) {
+            const text = this.chars.charAt(Math.floor(Math.random() * this.chars.length));
+            this.ctx.fillText(text, i * this.fontSize, this.matrix[i] * this.fontSize);
+
+            if (this.matrix[i] * this.fontSize > this.canvas.height && Math.random() > 0.975) {
+                this.matrix[i] = 0;
+            }
+            this.matrix[i]++;
+        }
+
+        requestAnimationFrame(() => this.draw());
+    }
+}
+
 // 3Dキューブアニメーション
 class CubeAnimation {
     constructor() {
@@ -413,6 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 少し遅延させてから初期化（パフォーマンス向上）
     setTimeout(() => {
         new MatrixEffect();
+        new FooterMatrix('footerMatrix');
         new CubeAnimation();
         new FormAnimation();
         new GlitchEffect();

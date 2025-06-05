@@ -254,166 +254,101 @@ class CardEffects {
     }
 }
 
-// Tron Light Cycle Game
-class TronGame {
+// Simple Pong Game
+class PongGame {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
+        this.canvas = document.getElementById('pongCanvas');
         if (!this.canvas) return;
         this.ctx = this.canvas.getContext('2d');
-        this.cellSize = 10;
-        this.cols = this.canvas.width / this.cellSize;
-        this.rows = this.canvas.height / this.cellSize;
-        this.inputDir = { dx: 1, dy: 0 };
+        this.w = this.canvas.width;
+        this.h = this.canvas.height;
+        this.paddleW = 60;
+        this.paddleH = 10;
         this.reset();
         this.bindEvents();
         this.loop();
     }
 
     reset() {
-        this.players = [
-            { x: 5, y: 5, dx: 1, dy: 0, color: '#00ffff', trail: [] },
-            { x: this.cols - 6, y: this.rows - 6, dx: -1, dy: 0, color: '#ff0080', trail: [] }
-        ];
-        this.isGameOver = false;
+        this.playerX = (this.w - this.paddleW) / 2;
+        this.cpuX = (this.w - this.paddleW) / 2;
+        this.ball = { x: this.w / 2, y: this.h / 2, dx: 2, dy: 2, r: 5 };
+        this.playerDir = 0;
     }
 
     bindEvents() {
-        document.addEventListener('keydown', (e) => {
-            switch (e.key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    if (this.inputDir.dy !== 1) this.inputDir = { dx: 0, dy: -1 };
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    if (this.inputDir.dy !== -1) this.inputDir = { dx: 0, dy: 1 };
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    if (this.inputDir.dx !== 1) this.inputDir = { dx: -1, dy: 0 };
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    if (this.inputDir.dx !== -1) this.inputDir = { dx: 1, dy: 0 };
-                    break;
-            }
+        document.addEventListener('keydown', e => {
+            if (['ArrowLeft', 'a', 'A'].includes(e.key)) this.playerDir = -1;
+            if (['ArrowRight', 'd', 'D'].includes(e.key)) this.playerDir = 1;
         });
-
+        document.addEventListener('keyup', e => {
+            if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'A', 'D'].includes(e.key)) this.playerDir = 0;
+        });
         document.querySelectorAll('.control-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.changeDirection(btn.dataset.dir));
+            const dir = btn.dataset.dir === 'left' ? -1 : 1;
+            btn.addEventListener('touchstart', () => { this.playerDir = dir; });
+            btn.addEventListener('touchend', () => { this.playerDir = 0; });
+            btn.addEventListener('mousedown', () => { this.playerDir = dir; });
+            btn.addEventListener('mouseup', () => { this.playerDir = 0; });
         });
-    }
-
-    changeDirection(dir) {
-        switch (dir) {
-            case 'up':
-                if (this.inputDir.dy !== 1) this.inputDir = { dx: 0, dy: -1 };
-                break;
-            case 'down':
-                if (this.inputDir.dy !== -1) this.inputDir = { dx: 0, dy: 1 };
-                break;
-            case 'left':
-                if (this.inputDir.dx !== 1) this.inputDir = { dx: -1, dy: 0 };
-                break;
-            case 'right':
-                if (this.inputDir.dx !== -1) this.inputDir = { dx: 1, dy: 0 };
-                break;
-        }
     }
 
     loop() {
-        if (this.isGameOver) return;
         this.update();
         this.draw();
-        setTimeout(() => this.loop(), 100);
+        requestAnimationFrame(() => this.loop());
     }
 
     update() {
-        const human = this.players[0];
-        const cpu = this.players[1];
+        this.playerX += this.playerDir * 4;
+        if (this.playerX < 0) this.playerX = 0;
+        if (this.playerX + this.paddleW > this.w) this.playerX = this.w - this.paddleW;
 
-        // 現在の盤面状態を取得
-        const occupied = {};
-        for (const p of this.players) {
-            occupied[p.x + ',' + p.y] = true;
-            for (const t of p.trail) {
-                occupied[t.x + ',' + t.y] = true;
+        const target = this.ball.x - this.paddleW / 2;
+        if (this.cpuX < target) this.cpuX += 2;
+        else if (this.cpuX > target) this.cpuX -= 2;
+        this.cpuX = Math.max(0, Math.min(this.w - this.paddleW, this.cpuX));
+
+        this.ball.x += this.ball.dx;
+        this.ball.y += this.ball.dy;
+
+        if (this.ball.x < this.ball.r || this.ball.x > this.w - this.ball.r) {
+            this.ball.dx *= -1;
+        }
+
+        if (this.ball.y < this.ball.r + this.paddleH) {
+            if (this.ball.x > this.cpuX && this.ball.x < this.cpuX + this.paddleW) {
+                this.ball.dy *= -1;
+                this.ball.y = this.ball.r + this.paddleH;
+            } else {
+                this.reset();
             }
         }
 
-        // 人間の次の方向
-        human.dx = this.inputDir.dx;
-        human.dy = this.inputDir.dy;
-
-        // CPUの方向決定
-        this.decideCpuMove(cpu, occupied);
-
-        for (const p of this.players) {
-            p.x += p.dx;
-            p.y += p.dy;
-            p.trail.push({ x: p.x, y: p.y });
-        }
-
-        // 衝突判定
-        for (const p of this.players) {
-            if (p.x < 0 || p.y < 0 || p.x >= this.cols || p.y >= this.rows) {
-                this.gameOver();
-                return;
-            }
-            const key = p.x + ',' + p.y;
-            if (occupied[key]) {
-                this.gameOver();
-                return;
+        if (this.ball.y > this.h - this.ball.r - this.paddleH) {
+            if (this.ball.x > this.playerX && this.ball.x < this.playerX + this.paddleW) {
+                this.ball.dy *= -1;
+                this.ball.y = this.h - this.ball.r - this.paddleH;
+            } else {
+                this.reset();
             }
         }
-    }
-
-    decideCpuMove(cpu, occupied) {
-        const dirs = [
-            { dx: 0, dy: -1 },
-            { dx: 1, dy: 0 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 }
-        ];
-        const forwardX = cpu.x + cpu.dx;
-        const forwardY = cpu.y + cpu.dy;
-        const forwardKey = forwardX + ',' + forwardY;
-        if (forwardX >= 0 && forwardY >= 0 && forwardX < this.cols && forwardY < this.rows && !occupied[forwardKey]) {
-            if (Math.random() < 0.8) return; // 80%の確率で直進
-        }
-
-        const candidates = dirs.filter(d => {
-            if (d.dx === -cpu.dx && d.dy === -cpu.dy) return false; // 180度転換を避ける
-            const nx = cpu.x + d.dx;
-            const ny = cpu.y + d.dy;
-            const key = nx + ',' + ny;
-            return nx >= 0 && ny >= 0 && nx < this.cols && ny < this.rows && !occupied[key];
-        });
-
-        if (candidates.length === 0) return;
-        const choice = candidates[Math.floor(Math.random() * candidates.length)];
-        cpu.dx = choice.dx;
-        cpu.dy = choice.dy;
     }
 
     draw() {
         this.ctx.fillStyle = '#0a0a0a';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        for (const p of this.players) {
-            this.ctx.fillStyle = p.color;
-            for (const t of p.trail) {
-                this.ctx.fillRect(t.x * this.cellSize, t.y * this.cellSize, this.cellSize, this.cellSize);
-            }
-        }
-    }
+        this.ctx.fillRect(0, 0, this.w, this.h);
 
-    gameOver() {
-        this.isGameOver = true;
-        setTimeout(() => this.reset(), 1000);
+        this.ctx.fillStyle = '#00ffff';
+        this.ctx.fillRect(this.playerX, this.h - this.paddleH, this.paddleW, this.paddleH);
+
+        this.ctx.fillStyle = '#ff0080';
+        this.ctx.fillRect(this.cpuX, 0, this.paddleW, this.paddleH);
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI * 2);
+        this.ctx.fill();
     }
 }
 
@@ -426,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new FormAnimation();
         new GlitchEffect();
         new CardEffects();
-        new TronGame();
+        new PongGame();
     }, 500);
 });
 

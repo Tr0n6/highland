@@ -588,12 +588,12 @@ body {
     color: var(--text-secondary);
 }
 
-/* Tron Game Section */
-.tron-game {
+/* Mini Game Section */
+.mini-game {
     text-align: center;
 }
 
-#gameCanvas {
+#pongCanvas {
     background: rgba(10, 10, 10, 0.9);
     border: 2px solid var(--primary-cyan);
     display: block;
@@ -609,9 +609,6 @@ body {
 
 .game-controls {
     margin-top: 0.5rem;
-}
-
-.game-controls .row {
     display: flex;
     justify-content: center;
 }

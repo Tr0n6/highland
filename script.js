@@ -254,6 +254,124 @@ class CardEffects {
     }
 }
 
+// Tron Light Cycle Game
+class TronGame {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.cellSize = 10;
+        this.cols = this.canvas.width / this.cellSize;
+        this.rows = this.canvas.height / this.cellSize;
+        this.reset();
+        this.bindEvents();
+        this.loop();
+    }
+
+    reset() {
+        this.players = [
+            { x: 5, y: 5, dx: 1, dy: 0, color: '#00ffff', trail: [] },
+            { x: this.cols - 6, y: this.rows - 6, dx: -1, dy: 0, color: '#ff0080', trail: [] }
+        ];
+        this.isGameOver = false;
+    }
+
+    bindEvents() {
+        document.addEventListener('keydown', (e) => {
+            const p1 = this.players[0];
+            const p2 = this.players[1];
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (p2.dy !== 1) { p2.dx = 0; p2.dy = -1; }
+                    break;
+                case 'ArrowDown':
+                    if (p2.dy !== -1) { p2.dx = 0; p2.dy = 1; }
+                    break;
+                case 'ArrowLeft':
+                    if (p2.dx !== 1) { p2.dx = -1; p2.dy = 0; }
+                    break;
+                case 'ArrowRight':
+                    if (p2.dx !== -1) { p2.dx = 1; p2.dy = 0; }
+                    break;
+                case 'w':
+                case 'W':
+                    if (p1.dy !== 1) { p1.dx = 0; p1.dy = -1; }
+                    break;
+                case 's':
+                case 'S':
+                    if (p1.dy !== -1) { p1.dx = 0; p1.dy = 1; }
+                    break;
+                case 'a':
+                case 'A':
+                    if (p1.dx !== 1) { p1.dx = -1; p1.dy = 0; }
+                    break;
+                case 'd':
+                case 'D':
+                    if (p1.dx !== -1) { p1.dx = 1; p1.dy = 0; }
+                    break;
+            }
+        });
+    }
+
+    loop() {
+        if (this.isGameOver) return;
+        this.update();
+        this.draw();
+        setTimeout(() => this.loop(), 100);
+    }
+
+    update() {
+        for (const p of this.players) {
+            p.x += p.dx;
+            p.y += p.dy;
+            p.trail.push({ x: p.x, y: p.y });
+        }
+
+        const occupied = {};
+        for (const p of this.players) {
+            if (p.x < 0 || p.y < 0 || p.x >= this.cols || p.y >= this.rows) {
+                this.gameOver();
+                return;
+            }
+            const key = p.x + ',' + p.y;
+            if (occupied[key]) {
+                this.gameOver();
+                return;
+            }
+            occupied[key] = true;
+        }
+
+        const trails = [];
+        for (const p of this.players) {
+            trails.push(...p.trail.slice(0, -1));
+        }
+        for (const p of this.players) {
+            for (const t of trails) {
+                if (p.x === t.x && p.y === t.y) {
+                    this.gameOver();
+                    return;
+                }
+            }
+        }
+    }
+
+    draw() {
+        this.ctx.fillStyle = '#0a0a0a';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        for (const p of this.players) {
+            this.ctx.fillStyle = p.color;
+            for (const t of p.trail) {
+                this.ctx.fillRect(t.x * this.cellSize, t.y * this.cellSize, this.cellSize, this.cellSize);
+            }
+        }
+    }
+
+    gameOver() {
+        this.isGameOver = true;
+        setTimeout(() => this.reset(), 1000);
+    }
+}
+
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
     // 少し遅延させてから初期化（パフォーマンス向上）
@@ -263,6 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new FormAnimation();
         new GlitchEffect();
         new CardEffects();
+        new TronGame();
     }, 500);
 });
 

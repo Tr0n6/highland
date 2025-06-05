@@ -607,6 +607,31 @@ body {
     font-size: 0.9rem;
 }
 
+.game-controls {
+    margin-top: 0.5rem;
+}
+
+.game-controls .row {
+    display: flex;
+    justify-content: center;
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    margin: 2px;
+    background: var(--darker-bg);
+    border: 1px solid var(--primary-cyan);
+    color: var(--primary-cyan);
+    font-size: 1.1rem;
+    border-radius: 5px;
+}
+
+.control-btn:active {
+    background: var(--primary-cyan);
+    color: var(--dark-bg);
+}
+
 /* Footer */
 .footer {
     background: var(--darker-bg);

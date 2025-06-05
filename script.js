@@ -263,6 +263,7 @@ class TronGame {
         this.cellSize = 10;
         this.cols = this.canvas.width / this.cellSize;
         this.rows = this.canvas.height / this.cellSize;
+        this.inputDir = { dx: 1, dy: 0 };
         this.reset();
         this.bindEvents();
         this.loop();
@@ -278,39 +279,50 @@ class TronGame {
 
     bindEvents() {
         document.addEventListener('keydown', (e) => {
-            const p1 = this.players[0];
-            const p2 = this.players[1];
             switch (e.key) {
                 case 'ArrowUp':
-                    if (p2.dy !== 1) { p2.dx = 0; p2.dy = -1; }
-                    break;
-                case 'ArrowDown':
-                    if (p2.dy !== -1) { p2.dx = 0; p2.dy = 1; }
-                    break;
-                case 'ArrowLeft':
-                    if (p2.dx !== 1) { p2.dx = -1; p2.dy = 0; }
-                    break;
-                case 'ArrowRight':
-                    if (p2.dx !== -1) { p2.dx = 1; p2.dy = 0; }
-                    break;
                 case 'w':
                 case 'W':
-                    if (p1.dy !== 1) { p1.dx = 0; p1.dy = -1; }
+                    if (this.inputDir.dy !== 1) this.inputDir = { dx: 0, dy: -1 };
                     break;
+                case 'ArrowDown':
                 case 's':
                 case 'S':
-                    if (p1.dy !== -1) { p1.dx = 0; p1.dy = 1; }
+                    if (this.inputDir.dy !== -1) this.inputDir = { dx: 0, dy: 1 };
                     break;
+                case 'ArrowLeft':
                 case 'a':
                 case 'A':
-                    if (p1.dx !== 1) { p1.dx = -1; p1.dy = 0; }
+                    if (this.inputDir.dx !== 1) this.inputDir = { dx: -1, dy: 0 };
                     break;
+                case 'ArrowRight':
                 case 'd':
                 case 'D':
-                    if (p1.dx !== -1) { p1.dx = 1; p1.dy = 0; }
+                    if (this.inputDir.dx !== -1) this.inputDir = { dx: 1, dy: 0 };
                     break;
             }
         });
+
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.changeDirection(btn.dataset.dir));
+        });
+    }
+
+    changeDirection(dir) {
+        switch (dir) {
+            case 'up':
+                if (this.inputDir.dy !== 1) this.inputDir = { dx: 0, dy: -1 };
+                break;
+            case 'down':
+                if (this.inputDir.dy !== -1) this.inputDir = { dx: 0, dy: 1 };
+                break;
+            case 'left':
+                if (this.inputDir.dx !== 1) this.inputDir = { dx: -1, dy: 0 };
+                break;
+            case 'right':
+                if (this.inputDir.dx !== -1) this.inputDir = { dx: 1, dy: 0 };
+                break;
+        }
     }
 
     loop() {
@@ -321,13 +333,32 @@ class TronGame {
     }
 
     update() {
+        const human = this.players[0];
+        const cpu = this.players[1];
+
+        // 現在の盤面状態を取得
+        const occupied = {};
+        for (const p of this.players) {
+            occupied[p.x + ',' + p.y] = true;
+            for (const t of p.trail) {
+                occupied[t.x + ',' + t.y] = true;
+            }
+        }
+
+        // 人間の次の方向
+        human.dx = this.inputDir.dx;
+        human.dy = this.inputDir.dy;
+
+        // CPUの方向決定
+        this.decideCpuMove(cpu, occupied);
+
         for (const p of this.players) {
             p.x += p.dx;
             p.y += p.dy;
             p.trail.push({ x: p.x, y: p.y });
         }
 
-        const occupied = {};
+        // 衝突判定
         for (const p of this.players) {
             if (p.x < 0 || p.y < 0 || p.x >= this.cols || p.y >= this.rows) {
                 this.gameOver();
@@ -338,21 +369,35 @@ class TronGame {
                 this.gameOver();
                 return;
             }
-            occupied[key] = true;
+        }
+    }
+
+    decideCpuMove(cpu, occupied) {
+        const dirs = [
+            { dx: 0, dy: -1 },
+            { dx: 1, dy: 0 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 }
+        ];
+        const forwardX = cpu.x + cpu.dx;
+        const forwardY = cpu.y + cpu.dy;
+        const forwardKey = forwardX + ',' + forwardY;
+        if (forwardX >= 0 && forwardY >= 0 && forwardX < this.cols && forwardY < this.rows && !occupied[forwardKey]) {
+            if (Math.random() < 0.8) return; // 80%の確率で直進
         }
 
-        const trails = [];
-        for (const p of this.players) {
-            trails.push(...p.trail.slice(0, -1));
-        }
-        for (const p of this.players) {
-            for (const t of trails) {
-                if (p.x === t.x && p.y === t.y) {
-                    this.gameOver();
-                    return;
-                }
-            }
-        }
+        const candidates = dirs.filter(d => {
+            if (d.dx === -cpu.dx && d.dy === -cpu.dy) return false; // 180度転換を避ける
+            const nx = cpu.x + d.dx;
+            const ny = cpu.y + d.dy;
+            const key = nx + ',' + ny;
+            return nx >= 0 && ny >= 0 && nx < this.cols && ny < this.rows && !occupied[key];
+        });
+
+        if (candidates.length === 0) return;
+        const choice = candidates[Math.floor(Math.random() * candidates.length)];
+        cpu.dx = choice.dx;
+        cpu.dy = choice.dy;
     }
 
     draw() {
